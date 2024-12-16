@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -25,17 +26,10 @@ class MyApp extends StatelessWidget {
         // and then invoke "hot reload" (save your changes or press the "hot
         // reload" button in a Flutter-supported IDE, or press "r" if you used
         // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.amber),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'My ToDo App'),
     );
   }
 }
@@ -59,16 +53,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<String> _todoList = [];
-  late Future<List<Todo>> futureTodos;
-  Future<String>? futureTodo;
-  late TextEditingController _controller;
+  // These fields are State of the widget
+  late Future<List<Todo>> _futureTodos;   // For Internet data (got from backend)
+  late TextEditingController _controller; // For keyboard input data
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
-    futureTodos = fetchTodos();
+    _futureTodos = fetchTodos();
   }
 
   @override
@@ -84,28 +77,30 @@ class _MyHomePageState extends State<MyHomePage> {
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      futureTodo = createTodo(value);
-      ///!!! Do invalidate data !!!
+      _futureTodos = createTodo(value);
+    });
+  }
+
+  void _updateItem(Todo newitem) {
+    // Method for toggle the "completed" field of the Todo item and update it
+    print('Task: ${newitem.task}, Completed: ${newitem.completed}');
+    setState(() {
+      // ...
+      // _futureTodos = ...
     });
   }
 
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
+    // by the _addToList method above.
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        //title: Text(widget.title),
         title: TextField(
           decoration: const InputDecoration(
             //prefixIcon: Icon(Icons.search),
@@ -118,9 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
           controller: _controller,
           onSubmitted: (value) {
             _controller.clear();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Вы набрали: $value')));
             _addToList(value);
+            /* ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Вы набрали: $value'))); */
           },
         ),
         actions: [
@@ -129,7 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
             tooltip: 'Удалить выполненные',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Вы нажали кнопку Удалить')));
+                  const SnackBar(content: Text('Вы нажали кнопку Удалить выполненные')));
             },
           ),
         ],
@@ -138,31 +132,33 @@ class _MyHomePageState extends State<MyHomePage> {
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: FutureBuilder<List<Todo>>(
-          future: futureTodos,
+          // FutureBuilder is a widget for rendering asynchronous data (usually got from Internet)
+          future: _futureTodos,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return ListView(
+                // ListView is a scrollable widget.
                 padding: const EdgeInsets.all(8),
                 children: snapshot.data!.map((element) =>
                   ListTile(
-                    leading: Checkbox(value: element.completed, onChanged: (newValue) {}),
+                    // ListTile is an item for ListView
+                    leading: Checkbox(
+                      // The Checkbox shows is the task completed
+                      value: element.completed, 
+                      onChanged: (newValue) { _updateItem(Todo(id: element.id, task: element.task, completed: newValue ?? false)); }
+                    ),
                     title: Text(
                       element.task, style: element.completed ? TextStyle(decoration: TextDecoration.lineThrough) : null
                     ),
                     trailing: IconButton(
+                      // This button is for delete the task
                       icon: Icon(Icons.delete),
                       tooltip: 'Удалить',
-                      onPressed: () {},
+                      onPressed: () { },
                     ),
                   )
-                  /* Container(
-                    height: 50,
-                    color: Colors.amber,
-                    child: Center(child: Text('Entry ${element.task}')),
-                  ), */
                 ).toList()
               );
-              //return Text(snapshot.data!.title);
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
             }

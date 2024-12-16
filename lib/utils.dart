@@ -21,26 +21,27 @@ Future<List<Todo>> fetchTodos() async {
   }
 }
 
-Future<String> createTodo(Todo todo) async {
+Future<List<Todo>> createTodo(String task) async {
   final response = await http.post(
     Uri.parse('http://localhost:8080/todos'),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
     body: jsonEncode(<String, dynamic>{
-      'id': todo.id,
-      'task': todo.task,
-      'completed': todo.completed
+      'task': task,
     }),
   );
 
   if (response.statusCode == 200) {
-    // If the server did return a 201 CREATED response,
+    // If the server did return a 200 OK response,
     // then parse the JSON.
-    return jsonDecode(response.body) as String;
+    return List<Todo>.from(
+      (jsonDecode(response.body) as List<dynamic>).map((el) => Todo.fromJson(el))
+    );
   } else {
-    // If the server did not return a 201 CREATED response,
+    // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to create album.');
+    throw Exception('Failed to create Todo.');
   }
 }
+
